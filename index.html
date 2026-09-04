@@ -1,96 +1,503 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>GPS Prototype</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Mon-gps</title>
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <style>
-*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",Arial,sans-serif;background:#071018;color:#fff;overflow:hidden}
-#map{position:absolute;inset:0;z-index:0}
-.panel{position:absolute;left:12px;right:12px;z-index:10;background:rgba(8,15,22,.94);border:1px solid rgba(255,255,255,.14);border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.top{top:calc(12px + env(safe-area-inset-top));padding:18px 18px 14px;display:flex;align-items:center;gap:14px}
-.arrow{font-size:48px;line-height:1;transform:rotate(-25deg)}
-.distance{font-size:30px;font-weight:800}.road{font-size:18px;margin-top:2px;color:#d9e2e8}
-.exit{margin-left:auto;border:1px solid #fff;border-radius:10px;padding:9px 10px;font-weight:800;white-space:nowrap}
-.speedbox{position:absolute;left:18px;bottom:150px;z-index:10;width:112px;text-align:center;background:rgba(7,13,19,.94);border-radius:22px;padding:10px 8px}
-.limit{width:62px;height:62px;margin:-35px auto 2px;border:5px solid #fff;border-radius:50%;background:#f5f5f5;color:#111;display:grid;place-items:center;font-size:23px;font-weight:900}
-.speed{font-size:36px;font-weight:900}.unit{font-size:14px;color:#aab6be}
-.alert{position:absolute;left:50%;transform:translateX(-50%);bottom:255px;z-index:11;background:#101820;border:2px solid #ff334b;border-radius:16px;padding:9px 15px;text-align:center;box-shadow:0 8px 25px rgba(0,0,0,.35)}
-.alert b{display:block;font-size:16px}.alert span{font-size:14px;color:#ff9ba6}
-.controls{position:absolute;right:14px;bottom:165px;z-index:10;display:flex;flex-direction:column;gap:10px}
-.btn{width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(8,15,22,.94);color:#fff;font-size:22px}
-.bottom{bottom:0;border-radius:25px 25px 0 0;padding:12px 14px calc(10px + env(safe-area-inset-bottom));text-align:center}
-.eta{font-size:34px;font-weight:800}.sub{color:#b8c2c9;margin:2px 0 12px}.nav{display:flex;justify-content:space-around;border-top:1px solid rgba(255,255,255,.1);padding-top:10px}
-.nav button{background:none;border:0;color:#d5dde2;font-size:12px}.nav b{display:block;font-size:22px;margin-bottom:3px}
-.locate{font-size:12px;color:#8bd1ff;margin-top:8px}
-.leaflet-control-attribution{display:none}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif}
+body{background:#111;overflow:hidden}
+
+#map{position:absolute;inset:0}
+
+.top{
+position:absolute;top:12px;left:12px;right:12px;
+z-index:1000;background:#171717;color:white;
+border-radius:16px;padding:12px;box-shadow:0 3px 15px #0008
+}
+
+.search{
+display:flex;gap:8px
+}
+#destination{
+flex:1;border:0;border-radius:12px;padding:13px;
+font-size:16px;outline:none
+}
+#searchBtn{
+border:0;border-radius:12px;padding:0 16px;
+background:#28a745;color:white;font-size:20px
+}
+
+#results{
+margin-top:8px;display:none;background:white;color:#111;
+border-radius:10px;overflow:hidden
+}
+.result{
+padding:12px;border-bottom:1px solid #ddd;
+font-size:14px
+}
+
+.route{
+margin-top:10px;font-size:18px;font-weight:bold
+}
+.route small{font-weight:normal;color:#bbb}
+
+.speed{
+position:absolute;top:155px;left:12px;z-index:1000;
+background:#171717;color:white;border-radius:14px;
+padding:10px 15px;text-align:center
+}
+.speed strong{font-size:30px}
+.speed small{display:block;color:#aaa}
+
+.alert{
+position:absolute;top:155px;right:12px;z-index:1000;
+background:#d71920;color:white;border-radius:14px;
+padding:10px;font-weight:bold;display:none
+}
+
+.buttons{
+position:absolute;right:12px;bottom:135px;z-index:1000;
+display:flex;flex-direction:column;gap:10px
+}
+.buttons button{
+width:48px;height:48px;border:0;border-radius:50%;
+background:white;font-size:21px;box-shadow:0 2px 8px #0005
+}
+
+.bottom{
+position:absolute;left:0;right:0;bottom:0;z-index:1000;
+background:#171717;color:white;border-radius:22px 22px 0 0;
+padding:14px 12px 8px
+}
+.info{text-align:center;margin-bottom:10px}
+#eta{font-size:22px;font-weight:bold}
+#distance{color:#aaa}
+
+.nav{
+display:flex;justify-content:space-around
+}
+.nav button{
+background:none;border:0;color:#aaa;font-size:11px
+}
+.nav b{display:block;font-size:20px;margin-bottom:3px}
+
+.status{
+text-align:center;font-size:12px;color:#aaa;margin-top:5px
+}
 </style>
 </head>
+
 <body>
+
 <div id="map"></div>
 
-<div class="panel top">
-  <div class="arrow">↗</div>
-  <div><div class="distance">1,2 km</div><div class="road">A8 · Toulon – Hyères</div></div>
-  <div class="exit">Sortie 36</div>
+<div class="top">
+  <div class="search">
+    <input id="destination" placeholder="Où allez-vous ?">
+    <button id="searchBtn">🔍</button>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="route" id="routeInfo">
+    🚗 Prêt à partir
+    <small id="routeSmall">Activez le GPS</small>
+  </div>
 </div>
 
-<div class="alert"><b>⚠ Radar fixe · 500 m</b><span>Ralentissez</span></div>
-
-<div class="speedbox">
-  <div class="limit" id="limit">110</div>
-  <div class="speed" id="speed">--</div>
-  <div class="unit">km/h</div>
+<div class="speed">
+  <strong id="speed">0</strong>
+  <small>km/h</small>
 </div>
 
-<div class="controls">
-  <button class="btn" id="sound" title="Son">🔊</button>
-  <button class="btn" id="report" title="Signaler">⚠️</button>
-  <button class="btn" id="locate" title="Ma position">⌖</button>
+<div class="alert" id="alert">
+  ⚠️ Ralentissez
 </div>
 
-<div class="panel bottom">
-  <div class="eta">24 min</div>
-  <div class="sub">28 km · arrivée 18:48</div>
+<div class="buttons">
+  <button id="locationBtn">📍</button>
+  <button id="soundBtn">🔊</button>
+  <button id="reportBtn">⚠️</button>
+</div>
+
+<div class="bottom">
+  <div class="info">
+    <div id="eta">-- min</div>
+    <div id="distance">Choisissez une destination</div>
+  </div>
+
   <div class="nav">
     <button><b>⌂</b>Accueil</button>
     <button><b>➤</b>Itinéraire</button>
     <button><b>⚠</b>Signalements</button>
-    <button><b>☆</b>Favoris</button>
+    <button><b>★</b>Favoris</button>
     <button><b>•••</b>Plus</button>
   </div>
-  <div class="locate" id="status">GPS en attente…</div>
+
+  <div class="status" id="status">
+    GPS en attente
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-const map=L.map('map',{zoomControl:false}).setView([43.1242,5.9293],13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
 
-let marker=null, watchId=null;
-const speedEl=document.getElementById('speed'), status=document.getElementById('status');
+<script>
+const map = L.map("map").setView([43.12,5.93],13);
+
+L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    maxZoom:19,
+    attribution:"© OpenStreetMap"
+  }
+).addTo(map);
+
+let positionMarker=null;
+let accuracyCircle=null;
+let watchId=null;
+let currentPosition=null;
+let destination=null;
+let routeLine=null;
+let soundOn=true;
+
+/* GPS */
+
+function startGPS(){
+
+  if(!navigator.geolocation){
+    document.getElementById("status").textContent =
+      "GPS non disponible";
+    return;
+  }
+
+  document.getElementById("status").textContent =
+    "Recherche de votre position…";
+
+  watchId=navigator.geolocation.watchPosition(
+    updatePosition,
+    gpsError,
+    {
+      enableHighAccuracy:true,
+      maximumAge:1000,
+      timeout:15000
+    }
+  );
+}
 
 function updatePosition(pos){
-  const {latitude,longitude,speed}=pos.coords;
-  const kmh = Number.isFinite(speed) && speed >= 0 ? speed*3.6 : null;
-  speedEl.textContent = kmh===null ? '--' : Math.round(kmh);
-  status.textContent='GPS actif · position mise à jour';
-  if(!marker){
-    marker=L.marker([latitude,longitude]).addTo(map);
-  } else marker.setLatLng([latitude,longitude]);
-  map.setView([latitude,longitude],16);
-}
-function gpsError(){
-  status.textContent='GPS indisponible ou autorisation refusée';
-}
-if(navigator.geolocation){
-  watchId=navigator.geolocation.watchPosition(updatePosition,gpsError,{enableHighAccuracy:true,maximumAge:1000,timeout:10000});
-}else status.textContent='Ce navigateur ne prend pas en charge le GPS';
 
-document.getElementById('locate').onclick=()=>{ if(marker) map.setView(marker.getLatLng(),17); };
-document.getElementById('sound').onclick=e=>{ e.currentTarget.textContent=e.currentTarget.textContent==='🔊'?'🔇':'🔊'; };
-document.getElementById('report').onclick=()=>alert('Prototype : signalement à connecter à notre serveur.');
+  const lat=pos.coords.latitude;
+  const lon=pos.coords.longitude;
+
+  currentPosition=[lat,lon];
+
+  let speed=pos.coords.speed;
+
+  if(speed==null || speed<0){
+    speed=0;
+  }
+
+  speed=speed*3.6;
+
+  document.getElementById("speed").textContent=
+    Math.round(speed);
+
+  document.getElementById("status").textContent=
+    "GPS actif • Position en direct";
+
+  if(!positionMarker){
+
+    positionMarker=L.marker(
+      [lat,lon],
+      {title:"Ma position"}
+    ).addTo(map);
+
+    positionMarker.bindPopup("📍 Vous êtes ici");
+
+  }else{
+
+    positionMarker.setLatLng([lat,lon]);
+
+  }
+
+  if(!accuracyCircle){
+
+    accuracyCircle=L.circle(
+      [lat,lon],
+      {
+        radius:pos.coords.accuracy || 20,
+        color:"#1877f2",
+        fillOpacity:.1
+      }
+    ).addTo(map);
+
+  }else{
+
+    accuracyCircle.setLatLng([lat,lon]);
+    accuracyCircle.setRadius(pos.coords.accuracy || 20);
+
+  }
+
+  if(!destination){
+    map.setView([lat,lon],16);
+  }
+
+  if(destination){
+    calculateRoute();
+  }
+}
+
+function gpsError(error){
+
+  document.getElementById("status").textContent=
+    "Impossible d'obtenir le GPS";
+
+  console.log(error);
+}
+
+/* RECHERCHE DESTINATION */
+
+document.getElementById("searchBtn")
+.addEventListener("click",searchDestination);
+
+document.getElementById("destination")
+.addEventListener("keydown",function(e){
+  if(e.key==="Enter"){
+    searchDestination();
+  }
+});
+
+async function searchDestination(){
+
+  const input=document
+    .getElementById("destination")
+    .value
+    .trim();
+
+  if(!input)return;
+
+  const results=document.getElementById("results");
+
+  results.style.display="block";
+  results.innerHTML=
+    "<div class='result'>🔎 Recherche…</div>";
+
+  try{
+
+    const url=
+      "https://nominatim.openstreetmap.org/search" +
+      "?format=jsonv2&limit=5&accept-language=fr&q=" +
+      encodeURIComponent(input);
+
+    const response=await fetch(url);
+
+    const data=await response.json();
+
+    results.innerHTML="";
+
+    if(!data.length){
+
+      results.innerHTML=
+        "<div class='result'>Aucune destination trouvée</div>";
+
+      return;
+    }
+
+    data.forEach(place=>{
+
+      const div=document.createElement("div");
+
+      div.className="result";
+
+      div.textContent=place.display_name;
+
+      div.onclick=function(){
+
+        destination=[
+          parseFloat(place.lat),
+          parseFloat(place.lon)
+        ];
+
+        document.getElementById("destination").value=
+          place.display_name.split(",")[0];
+
+        results.style.display="none";
+
+        L.marker(destination)
+          .addTo(map)
+          .bindPopup("🎯 Destination")
+          .openPopup();
+
+        if(currentPosition){
+          calculateRoute();
+        }else{
+
+          map.setView(destination,15);
+
+          document.getElementById("status")
+            .textContent=
+            "Activez le GPS pour calculer l'itinéraire";
+
+        }
+      };
+
+      results.appendChild(div);
+
+    });
+
+  }catch(error){
+
+    results.innerHTML=
+      "<div class='result'>Erreur de recherche</div>";
+
+    console.log(error);
+  }
+}
+
+/* ITINERAIRE */
+
+async function calculateRoute(){
+
+  if(!currentPosition || !destination)return;
+
+  try{
+
+    const startLon=currentPosition[1];
+    const startLat=currentPosition[0];
+
+    const endLon=destination[1];
+    const endLat=destination[0];
+
+    const url=
+      "https://router.project-osrm.org/route/v1/driving/" +
+      startLon+","+startLat+";"+
+      endLon+","+endLat+
+      "?overview=full&geometries=geojson";
+
+    const response=await fetch(url);
+
+    const data=await response.json();
+
+    if(!data.routes || !data.routes.length){
+      throw new Error("Aucun itinéraire");
+    }
+
+    const route=data.routes[0];
+
+    const distanceKm=route.distance/1000;
+
+    const minutes=Math.max(
+      1,
+      Math.round(route.duration/60)
+    );
+
+    document.getElementById("eta").textContent=
+      minutes+" min";
+
+    document.getElementById("distance").textContent=
+      distanceKm.toFixed(1)+" km";
+
+    document.getElementById("routeInfo").innerHTML=
+      "🚗 Itinéraire actif " +
+      "<small>• "+distanceKm.toFixed(1)+" km</small>";
+
+    if(routeLine){
+      map.removeLayer(routeLine);
+    }
+
+    routeLine=L.geoJSON(
+      route.geometry,
+      {
+        style:{
+          weight:7,
+          opacity:.85
+        }
+      }
+    ).addTo(map);
+
+    map.fitBounds(
+      routeLine.getBounds(),
+      {padding:[80,180]}
+    );
+
+  }catch(error){
+
+    document.getElementById("status")
+      .textContent=
+      "Impossible de calculer l'itinéraire";
+
+    console.log(error);
+  }
+}
+
+/* BOUTON POSITION */
+
+document.getElementById("locationBtn")
+.addEventListener("click",function(){
+
+  if(currentPosition){
+
+    map.setView(
+      currentPosition,
+      17
+    );
+
+    positionMarker.openPopup();
+
+  }else{
+
+    startGPS();
+
+  }
+});
+
+/* SON */
+
+document.getElementById("soundBtn")
+.addEventListener("click",function(){
+
+  soundOn=!soundOn;
+
+  this.textContent=
+    soundOn ? "🔊" : "🔇";
+
+});
+
+/* SIGNALEMENT */
+
+document.getElementById("reportBtn")
+.addEventListener("click",function(){
+
+  if(currentPosition){
+
+    L.marker(currentPosition)
+      .addTo(map)
+      .bindPopup("⚠️ Signalement ajouté")
+      .openPopup();
+
+    document.getElementById("status")
+      .textContent=
+      "Signalement ajouté à votre position";
+
+  }else{
+
+    alert("Activez d'abord le GPS.");
+
+  }
+
+});
+
+/* DEMARRAGE */
+
+startGPS();
+
 </script>
+
 </body>
 </html>
